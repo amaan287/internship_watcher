@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Razorpay",
+    "type": "greenhouse",
+    "board_token": "razorpaysoftwareprivatelimited"
+  },
+  {
+    "name": "Zomato",
+    "type": "smartrecruiters",
+    "company_id": "Zomato1"
+  },
+  {
+    "name": "Zerodha",
+    "type": "html_keyword",
+    "url": "https://careers.zerodha.com/"
+  },
+  {
+    "name": "Swiggy",
+    "type": "html_keyword",
+    "url": "https://careers.swiggy.com/"
+  },
+  {
+    "name": "Zepto",
+    "type": "html_keyword",
+    "url": "https://www.zepto.com/s/careers"
+  },
+  {
+    "name": "Flipkart",
+    "type": "html_keyword",
+    "url": "https://www.flipkartcareers.com/#!/joblist"
+  },
+  {
+    "name": "Blinkit",
+    "type": "html_keyword",
+    "url": "https://blinkit.com/careers"
+  }
+]
