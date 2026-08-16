@@ -1,15 +1,15 @@
 # Internship Watcher
 
-Checks Razorpay, Zomato, Zerodha, Swiggy, Zepto, Flipkart, and Blinkit for new
-internship postings on a schedule, and pushes a phone notification the moment
-one appears. Runs entirely on GitHub's free infrastructure — nothing needs to
-stay running on your own machine.
+Checks Razorpay, Zomato, Zerodha, Swiggy, Zepto, Flipkart, Blinkit, Groww,
+PhonePe, Unacademy, and Cars24 for new internship postings on a schedule, and
+pushes a phone notification the moment one appears. Runs entirely on GitHub's
+free infrastructure — nothing needs to stay running on your own machine.
 
 ## How it works
 
-- **Razorpay** and **Zomato** are checked via their real job-board APIs
-  (Greenhouse and SmartRecruiters respectively) — this is reliable, exact,
-  and won't miss anything.
+- **Razorpay, Zomato, Groww, PhonePe, Unacademy, and Cars24** are checked via
+  their real job-board APIs (Greenhouse and SmartRecruiters respectively) —
+  this is reliable, exact, and won't miss anything.
 - **Zerodha, Swiggy, Zepto, Flipkart, Blinkit** don't expose a public jobs
   API, so the script falls back to fetching their careers page and looking
   for lines containing "intern". This is best-effort: if a page is a

@@ -33,5 +33,25 @@
     "name": "Blinkit",
     "type": "html_keyword",
     "url": "https://blinkit.com/careers"
+  },
+  {
+    "name": "Groww",
+    "type": "greenhouse",
+    "board_token": "groww"
+  },
+  {
+    "name": "PhonePe",
+    "type": "greenhouse",
+    "board_token": "phonepe"
+  },
+  {
+    "name": "Unacademy",
+    "type": "smartrecruiters",
+    "company_id": "Unacademy"
+  },
+  {
+    "name": "Cars24",
+    "type": "smartrecruiters",
+    "company_id": "Cars24"
   }
 ]
