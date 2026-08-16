@@ -2,10 +2,10 @@
 """
 Internship watcher.
 
-Checks a list of companies for job postings containing "intern", compares
-against the last-known state (stored in state.json, committed back to the
-repo by the GitHub Action), and sends a push notification via ntfy.sh for
-anything new.
+Checks a list of companies for job postings containing "intern" AND located
+in India, compares against the last-known state (stored in state.json,
+committed back to the repo by the GitHub Action), and sends a push
+notification via ntfy.sh for anything new.
 
 Two company types are handled properly via their public JSON APIs:
   - greenhouse       (Razorpay and many others use this ATS)
@@ -69,6 +69,18 @@ def notify(title, message):
         print(f"Notify failed: {e}")
 
 
+INDIA_HINTS = [
+    "india", "bangalore", "bengaluru", "gurgaon", "gurugram", "hyderabad",
+    "mumbai", "delhi", "noida", "pune", "chennai", "kolkata", "ahmedabad",
+    "jaipur",
+]
+
+
+def is_india(text):
+    t = f" {text.lower()} "
+    return any(hint in t for hint in INDIA_HINTS)
+
+
 def check_greenhouse(company):
     url = f"https://boards-api.greenhouse.io/v1/boards/{company['board_token']}/jobs?content=true"
     data = json.loads(fetch(url))
@@ -76,12 +88,26 @@ def check_greenhouse(company):
     results = {}
     for j in jobs:
         title = j.get("title", "")
-        if "intern" in title.lower():
-            job_id = str(j.get("id"))
-            results[job_id] = {
-                "title": title,
-                "url": j.get("absolute_url", ""),
-            }
+        if "intern" not in title.lower():
+            continue
+
+        # Location can show up either as a single "location" field or a list
+        # of offices, depending on how the company configured Greenhouse.
+        location_bits = [j.get("location", {}).get("name", "")]
+        for office in j.get("offices", []):
+            location_bits.append(office.get("name", ""))
+            location_bits.append(office.get("location", ""))
+        location_text = " ".join(b for b in location_bits if b)
+
+        if not is_india(location_text):
+            continue
+
+        job_id = str(j.get("id"))
+        results[job_id] = {
+            "title": title,
+            "url": j.get("absolute_url", ""),
+            "location": location_text,
+        }
     return results
 
 
@@ -92,12 +118,24 @@ def check_smartrecruiters(company):
     results = {}
     for p in postings:
         title = p.get("name", "")
-        if "intern" in title.lower():
-            job_id = str(p.get("id"))
-            results[job_id] = {
-                "title": title,
-                "url": f"https://jobs.smartrecruiters.com/{company['company_id']}/{p.get('id')}",
-            }
+        if "intern" not in title.lower():
+            continue
+
+        loc = p.get("location", {}) or {}
+        country_code = (loc.get("country") or "").lower()
+        location_text = " ".join(
+            str(v) for v in [loc.get("city"), loc.get("region"), loc.get("country")] if v
+        )
+
+        if country_code != "in" and not is_india(location_text):
+            continue
+
+        job_id = str(p.get("id"))
+        results[job_id] = {
+            "title": title,
+            "url": f"https://jobs.smartrecruiters.com/{company['company_id']}/{p.get('id')}",
+            "location": location_text,
+        }
     return results
 
 
@@ -105,9 +143,21 @@ def check_html_keyword(company):
     html = fetch(company["url"])
     text = re.sub("<[^>]+>", " ", html)
     lines = [l.strip() for l in text.splitlines() if l.strip()]
-    intern_lines = [l for l in lines if "intern" in l.lower()]
-    # Fingerprint the whole intern-related content as a single "job" entry
-    # since generic HTML doesn't give us stable per-posting IDs.
+
+    # Best-effort: keep a line only if it mentions "intern" AND an India
+    # signal shows up within a few lines of it. Generic HTML rarely has a
+    # clean per-posting structure to filter on, so this is approximate —
+    # it can miss a real match if location is rendered far from the title,
+    # and it can occasionally include something it shouldn't. Treat this
+    # checker type as "might catch it," not a guarantee, same as before.
+    intern_lines = []
+    for i, l in enumerate(lines):
+        if "intern" not in l.lower():
+            continue
+        window = " ".join(lines[max(0, i - 3):i + 4])
+        if is_india(window):
+            intern_lines.append(l)
+
     blob = "\n".join(intern_lines)
     if not blob:
         return {}
