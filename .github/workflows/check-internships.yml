@@ -9,9 +9,16 @@ on:
 permissions:
   contents: write
 
+# Prevents two runs from overlapping and racing to push state.json at the
+# same time, which is the most common cause of the push getting rejected.
+concurrency:
+  group: internship-watcher
+  cancel-in-progress: false
+
 jobs:
   check:
     runs-on: ubuntu-latest
+    environment: prod
     steps:
       - uses: actions/checkout@v4
 
@@ -29,5 +36,23 @@ jobs:
           git config user.name "internship-watcher-bot"
           git config user.email "actions@github.com"
           git add state.json
-          git diff --cached --quiet || git commit -m "Update state [skip ci]"
-          git push
+          if git diff --cached --quiet; then
+            echo "No state changes to commit."
+            exit 0
+          fi
+          git commit -m "Update state [skip ci]"
+          # If the remote moved on since checkout (e.g. you pushed a manual
+          # edit, or a previous run's push landed just before this one),
+          # rebase onto the latest remote commit and retry a few times
+          # rather than failing outright.
+          for i in 1 2 3 4 5; do
+            if git push; then
+              exit 0
+            fi
+            echo "Push rejected, pulling and retrying ($i/5)..."
+            git fetch origin main
+            git rebase origin/main
+            sleep 3
+          done
+          echo "Failed to push after retries."
+          exit 1
